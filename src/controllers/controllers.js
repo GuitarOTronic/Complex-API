@@ -13,11 +13,12 @@ function getById(req, res, next) {
 
   let id = req.params.id
   let account = model.getById(id)
-
-  if (account.error) {
-    next({
+  // console.log(account.error);
+  if (account.errors) {
+    console.log('hello');
+    return next({
       status: 404,
-      message: account.error
+      message: account.errors
     })
   } else {
 
@@ -85,7 +86,7 @@ function getTransactions(req, res, next) {
 
   let response = model.getTransactions(id, transaction)
   if (response.error) {
-    next({
+    return next({
       status: 404,
       message: response.error
     })
@@ -118,13 +119,35 @@ function createTransaction(req, res, next) {
   let acctID = req.params.id
   let body = req.body
   let response = model.createTransaction(acctID, body)
-  console.log(response);
-  res.status(200).json({
-    response
-  })
+  // console.log(response);
+  if (response.error) {
+    next({
+      status: 400,
+      message: response.error
+    })
+  } else {
+    res.status(200).json({
+      response
+    })
+  }
 }
 
-function destroyTransaction(req, res, next) {}
+function destroyTransaction(req, res, next) {
+  let id = req.params.id
+  let trnsID = req.params.trnsID
+  let response = model.destroyTransaction(id, trnsID)
+
+  if (response.error) {
+    next({
+      status: 404,
+      message: response.error
+    })
+  } else {
+    res.status(200).json({
+      response
+    })
+  }
+}
 
 
 
