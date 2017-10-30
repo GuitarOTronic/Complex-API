@@ -1,5 +1,6 @@
 const uuid = require('uuid/v4')
 const fs = require("fs")
+//
 // var acct = [{
 //     id: '1234',
 //     name: 'Sean',
@@ -46,7 +47,7 @@ function getAll() {
 
   let acct = JSON.parse(fs.readFileSync('acct.json', 'utf-8'))
   return acct
-  // console.log(acct);
+
 
 }
 
@@ -73,6 +74,9 @@ function getById(id) {
 }
 
 function create(body) {
+
+  let acct = JSON.parse(fs.readFileSync('acct.json', 'utf-8'))
+  console.log(Array.isArray(acct));
   let response
   let error = []
   let {
@@ -81,14 +85,23 @@ function create(body) {
     description
   } = body
   let id = uuid()
-  body.id = id
+
   if (!name || !bank || !description) {
     error.push(`Name, bank, and description fields are all required!`)
     return {
       error
     }
   } else {
-    acct.push(body)
+    acct.push({
+      name,
+      bank,
+      description,
+      id
+    })
+
+    let jBody = JSON.stringify(acct)
+    fs.writeFileSync('acct.json', jBody)
+
     return {
       body
     }
@@ -96,6 +109,8 @@ function create(body) {
 }
 
 function update(id, body) {
+  let acct = JSON.parse(fs.readFileSync('acct.json', 'utf-8'))
+  // console.log(acct);
   let error = []
   let {
     name,
@@ -103,27 +118,43 @@ function update(id, body) {
     description
   } = body
   let account = getById(id)
+
+  //finds index of the account to update
+  let index = acct.findIndex(el => {
+    return el.id === id
+  })
+  //checks for vaild request
   if (!name || !bank || !description) {
     error.push(`Name, bank, and description fields are all required!`)
     return {
       error
     }
   } else {
+    //updates account
     account.name = name,
       account.bank = bank,
       account.description = description
+    //replaces old account with updates version
+    acct.splice(index, 1, account)
+    let jBody = JSON.stringify(acct)
+    fs.writeFileSync('acct.json', jBody)
     return account
   }
 
 }
 
 function destroy(id) {
+  let acct = JSON.parse(fs.readFileSync('acct.json', 'utf-8'))
 
   let account = getById(id)
   let error = []
-  let index = acct.indexOf(account)
-  if (account) {
+  let index = acct.findIndex(el => {
+    return el.id === id
+  })
+  if (!account.errors) {
     let destroyed = acct.splice(index, 1)
+    let jBody = JSON.stringify(acct)
+    fs.writeFileSync('acct.json', jBody)
     return {
       destroyed
     }
@@ -134,22 +165,20 @@ function destroy(id) {
     }
   }
 }
-//console.log(bank[0].transactions[0].id);
+
+
 
 function getTransactions(id, transaction) {
+  let acct = JSON.parse(fs.readFileSync('acct.json', 'utf-8'))
   let response
   let error = []
-
   //gets specific account
   let thisAccount = getById(id)
-  // console.log(thisAccount.errors);
   if (thisAccount.errors) {
     error.push(thisAccount.errors[0])
     return error
   }
-
   let thisTrans = thisAccount.transactions.find(el => {
-
     if (el.id === transaction) {
       return el
     }
@@ -165,7 +194,7 @@ function getTransactions(id, transaction) {
 }
 
 function updateTransaction(acctID, trnsid, body) {
-
+  let acct = JSON.parse(fs.readFileSync('acct.json', 'utf-8'))
   let error = []
 
   let {
@@ -174,8 +203,16 @@ function updateTransaction(acctID, trnsid, body) {
     pending,
     amount
   } = body
-  //  console.log(title);
+  let thisAccount = getById(acctID)
   let thisTransaction = getTransactions(acctID, trnsid)
+
+  let accountIndex = acct.findIndex(el => {
+    return el.id === acctID
+  })
+  let transIndex = thisAccount.transactions.findIndex(el => {
+    return el.id === trnsid
+  })
+
   if (!title || !pending || !amount) {
     error.push(`Title, pending status, and amount fields are all required!`)
     return {
@@ -185,13 +222,21 @@ function updateTransaction(acctID, trnsid, body) {
     thisTransaction.title = title
     thisTransaction.pending = pending
     thisTransaction.amount = amount
+    acct[accountIndex].transactions.splice(transIndex, 1, thisTransaction)
+    let jBody = JSON.stringify(acct)
+    fs.writeFileSync('acct.json', jBody)
     return thisTransaction
   }
 }
 
 function createTransaction(acctID, body) {
+  let acct = JSON.parse(fs.readFileSync('acct.json', 'utf-8'))
   let thisAccount = getById(acctID)
+  let accountIndex = acct.findIndex(el => {
+    return el.id === acctID
+  })
   let acctTrans = thisAccount.transactions
+
   let {
     title,
     pending,
@@ -204,16 +249,33 @@ function createTransaction(acctID, body) {
       error
     }
   } else {
-    let newTrans = body
+    let newTrans = {}
     newTrans.id = uuid()
+    newTrans.title = title
+    newTrans.pending = pending
+    newTrans.amount = amount
+
     acctTrans.push(newTrans)
+    acct[accountIndex].transactions.splice(0, 1, acctTrans)
+    let jBody = JSON.stringify(acct)
+    fs.writeFileSync('acct.json', jBody)
+
   }
 
   return acctTrans
 }
 
 function destroyTransaction(id, trnsID) {
+  let acct = JSON.parse(fs.readFileSync('acct.json', 'utf-8'))
   let account = getById(id)
+  let accountIndex = acct.findIndex(el => {
+    return el.id === id
+  })
+
+  let transIndex = account.transactions.findIndex(el => {
+    return el.id === trnsID
+  })
+
   let error = []
   if (account.errors) {
     error.push(account.errors)
@@ -233,8 +295,14 @@ function destroyTransaction(id, trnsID) {
 
   //find index of the transaction to be deleted
   let index = account.transactions.indexOf(transaction)
+
   if (account && transaction) {
+
     account.transactions.splice(index, 1)
+    acct[accountIndex].transactions.splice(transIndex, 1)
+    let jBody = JSON.stringify(acct)
+    fs.writeFileSync('acct.json', jBody)
+
     return transaction
   }
 }
