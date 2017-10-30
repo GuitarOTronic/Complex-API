@@ -76,7 +76,7 @@ function getById(id) {
 function create(body) {
 
   let acct = JSON.parse(fs.readFileSync('acct.json', 'utf-8'))
-  console.log(Array.isArray(acct));
+
   let response
   let error = []
   let {
@@ -110,7 +110,6 @@ function create(body) {
 
 function update(id, body) {
   let acct = JSON.parse(fs.readFileSync('acct.json', 'utf-8'))
-  // console.log(acct);
   let error = []
   let {
     name,

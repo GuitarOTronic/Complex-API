@@ -13,9 +13,9 @@ function getById(req, res, next) {
 
   let id = req.params.id
   let account = model.getById(id)
-  // console.log(account.error);
+
   if (account.errors) {
-    console.log('hello');
+
     return next({
       status: 404,
       message: account.errors
@@ -99,7 +99,7 @@ function getTransactions(req, res, next) {
 function updateTransaction(req, res, next) {
   let trnsID = req.params.trnsID
   let acctID = req.params.id
-  // console.log(trnsid, id);
+
   let body = req.body
   let response = model.updateTransaction(acctID, trnsID, body)
   if (response.error) {
@@ -112,14 +112,12 @@ function updateTransaction(req, res, next) {
       response
     })
   }
-
 }
 
 function createTransaction(req, res, next) {
   let acctID = req.params.id
   let body = req.body
   let response = model.createTransaction(acctID, body)
-  // console.log(response);
   if (response.error) {
     next({
       status: 400,
